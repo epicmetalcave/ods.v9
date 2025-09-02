@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODS v9.1 - Database Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid var(--color-ui);
+        }
+        .test-output {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px dashed var(--color-ui);
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <header id="top-bar">
+        <div class="app-title">DATABASE TEST</div>
+        <div class="global-actions">
+            <button onclick="location.reload()">REFRESH</button>
+        </div>
+    </header>
+    <main id="main-container" style="overflow-y: auto; padding: 20px;">
+        <h2>INDEXEDDB OPERATIONS TEST</h2>
+        
+        <!-- Database Info -->
+        <div class="test-section">
+            <h3>DATABASE INFO</h3>
+            <div class="button-group">
+                <button onclick="testDBInfo()">GET DB INFO</button>
+                <button onclick="testDBSize()">GET DB SIZE</button>
+                <button onclick="testDBExists()">CHECK EXISTS</button>
+                <button onclick="testDeleteDB()" style="border-color: red; color: red;">DELETE DATABASE</button>
+            </div>
+            <div id="db-info-output" class="test-output">Press buttons to test...</div>
+        </div>
+        
+        <!-- Theme Store Tests -->
+        <div class="test-section">
+            <h3>THEMES STORE</h3>
+            <div class="button-group">
+                <button onclick="testAddTheme()">ADD THEME</button>
+                <button onclick="testGetTheme()">GET THEME</button>
+                <button onclick="testGetAllThemes()">GET ALL THEMES</button>
+                <button onclick="testUpdateTheme()">UPDATE THEME</button>
+                <button onclick="testDeleteTheme()">DELETE THEME</button>
+                <button onclick="testClearThemes()">CLEAR STORE</button>
+            </div>
+            <div id="themes-output" class="test-output">No operations yet...</div>
+        </div>
+        
+        <!-- Operations Store Tests -->
+        <div class="test-section">
+            <h3>OPERATIONS STORE</h3>
+            <div class="button-group">
+                <button onclick="testAddOperation()">ADD OPERATION</button>
+                <button onclick="testGetAllOperations()">GET ALL OPERATIONS</button>
+                <button onclick="testClearOperations()">CLEAR STORE</button>
+            </div>
+            <div id="operations-output" class="test-output">No operations yet...</div>
+        </div>
+        
+        <!-- Workspaces Store Tests -->
+        <div class="test-section">
+            <h3>WORKSPACES STORE</h3>
+            <div class="button-group">
+                <button onclick="testAddWorkspace()">ADD WORKSPACE</button>
+                <button onclick="testGetAllWorkspaces()">GET ALL WORKSPACES</button>
+                <button onclick="testClearWorkspaces()">CLEAR STORE</button>
+            </div>
+            <div id="workspaces-output" class="test-output">No operations yet...</div>
+        </div>
+        
+        <!-- Stress Test -->
+        <div class="test-section">
+            <h3>STRESS TEST</h3>
+            <div class="button-group">
+                <button onclick="stressTest()">ADD 100 ITEMS</button>
+                <button onclick="performanceTest()">PERFORMANCE TEST</button>
+            </div>
+            <div id="stress-output" class="test-output">No tests run...</div>
+        </div>
+    </main>
+    
+    <script src="js/database.js"></script>
+    <script>
+        // Initialize database on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initDB();
+                document.getElementById('db-info-output').textContent = 'Database initialized successfully!';
+            } catch (error) {
+                document.getElementById('db-info-output').textContent = `Init failed: ${error.message}`;
+            }
+        });
+        
+        // Database Info Tests
+        async function testDBInfo() {
+            const output = document.getElementById('db-info-output');
+            try {
+                const db = await getDB();
+                const stores = Array.from(db.objectStoreNames);
+                output.textContent = `Database: ${DB_NAME} v${DB_VERSION}\nStores: ${stores.join(', ')}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testDBSize() {
+            const output = document.getElementById('db-info-output');
+            try {
+                const size = await getDBSize();
+                if (size) {
+                    output.textContent = `Usage: ${size.usageInMB} MB / ${size.quotaInMB} MB (${size.percentUsed}%)`;
+                } else {
+                    output.textContent = 'Size estimation not supported';
+                }
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testDBExists() {
+            const output = document.getElementById('db-info-output');
+            try {
+                const exists = await databaseExists();
+                output.textContent = `Database exists: ${exists}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testDeleteDB() {
+            if (!confirm('Delete entire database?')) return;
+            const output = document.getElementById('db-info-output');
+            try {
+                await deleteDB();
+                output.textContent = 'Database deleted! Refresh to recreate.';
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Theme Tests
+        async function testAddTheme() {
+            const output = document.getElementById('themes-output');
+            try {
+                const theme = {
+                    id: 'test-theme-' + Date.now(),
+                    colors: { background: '#000000', text: '#00FF00', ui: '#00FF00' },
+                    scale: { current: 1, min: 0.25, max: 2.0 }
+                };
+                const result = await addItem('themes', theme);
+                output.textContent = `Added theme: ${JSON.stringify(theme, null, 2)}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testGetTheme() {
+            const output = document.getElementById('themes-output');
+            try {
+                const theme = await getItem('themes', 'default');
+                output.textContent = theme ? 
+                    `Found theme: ${JSON.stringify(theme, null, 2)}` : 
+                    'No theme found with id: default';
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testGetAllThemes() {
+            const output = document.getElementById('themes-output');
+            try {
+                const themes = await getAllItems('themes');
+                output.textContent = `Found ${themes.length} themes:\n${JSON.stringify(themes, null, 2)}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testUpdateTheme() {
+            const output = document.getElementById('themes-output');
+            try {
+                const updated = await updateItem('themes', 'default', { 
+                    scale: { current: 1.5, min: 0.25, max: 2.0 } 
+                });
+                output.textContent = `Updated theme: ${JSON.stringify(updated, null, 2)}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testDeleteTheme() {
+            const output = document.getElementById('themes-output');
+            try {
+                await deleteItem('themes', 'default');
+                output.textContent = 'Theme deleted successfully';
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testClearThemes() {
+            const output = document.getElementById('themes-output');
+            try {
+                await clearStore('themes');
+                output.textContent = 'Themes store cleared';
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Operations Tests
+        async function testAddOperation() {
+            const output = document.getElementById('operations-output');
+            try {
+                const operation = {
+                    type: 'tracker',
+                    data: { name: 'Test Operation', description: 'Testing database' },
+                    created: Date.now()
+                };
+                const result = await addItem('operations', operation);
+                output.textContent = `Added operation with ID: ${result}\n${JSON.stringify(operation, null, 2)}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testGetAllOperations() {
+            const output = document.getElementById('operations-output');
+            try {
+                const operations = await getAllItems('operations');
+                output.textContent = `Found ${operations.length} operations:\n${JSON.stringify(operations, null, 2)}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testClearOperations() {
+            const output = document.getElementById('operations-output');
+            try {
+                await clearStore('operations');
+                output.textContent = 'Operations store cleared';
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Workspaces Tests
+        async function testAddWorkspace() {
+            const output = document.getElementById('workspaces-output');
+            try {
+                const workspace = {
+                    name: 'Test Workspace ' + Date.now(),
+                    panels: [],
+                    created: Date.now()
+                };
+                const result = await addItem('workspaces', workspace);
+                output.textContent = `Added workspace with ID: ${result}\n${JSON.stringify(workspace, null, 2)}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testGetAllWorkspaces() {
+            const output = document.getElementById('workspaces-output');
+            try {
+                const workspaces = await getAllItems('workspaces');
+                output.textContent = `Found ${workspaces.length} workspaces:\n${JSON.stringify(workspaces, null, 2)}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testClearWorkspaces() {
+            const output = document.getElementById('workspaces-output');
+            try {
+                await clearStore('workspaces');
+                output.textContent = 'Workspaces store cleared';
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Stress Tests
+        async function stressTest() {
+            const output = document.getElementById('stress-output');
+            output.textContent = 'Running stress test...';
+            
+            try {
+                const startTime = performance.now();
+                const promises = [];
+                
+                for (let i = 0; i < 100; i++) {
+                    promises.push(addItem('operations', {
+                        type: 'test',
+                        data: { index: i, random: Math.random() },
+                        created: Date.now()
+                    }));
+                }
+                
+                await Promise.all(promises);
+                const endTime = performance.now();
+                const duration = (endTime - startTime).toFixed(2);
+                
+                const allOps = await getAllItems('operations');
+                output.textContent = `Added 100 items in ${duration}ms\nTotal items in store: ${allOps.length}`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function performanceTest() {
+            const output = document.getElementById('stress-output');
+            output.textContent = 'Running performance test...';
+            
+            try {
+                const results = [];
+                
+                // Write test
+                const writeStart = performance.now();
+                for (let i = 0; i < 10; i++) {
+                    await addItem('operations', {
+                        type: 'perf-test',
+                        data: { index: i }
+                    });
+                }
+                const writeTime = performance.now() - writeStart;
+                
+                // Read test
+                const readStart = performance.now();
+                for (let i = 0; i < 10; i++) {
+                    await getAllItems('operations');
+                }
+                const readTime = performance.now() - readStart;
+                
+                output.textContent = `Performance Results:\nWrite (10 items): ${writeTime.toFixed(2)}ms\nRead (10 queries): ${readTime.toFixed(2)}ms`;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

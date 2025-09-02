@@ -61,13 +61,16 @@ async function initApp() {
     try {
         console.log('Application starting...');
         
+        // Initialize database first
+        await initDB();
+        console.log('Database ready');
+        
         // Initialize theme system
         await initTheme();
         
         // Set up scale controls
         setupScaleControls();
         
-        // Database will be initialized in Batch 4
         // Backup system will be initialized in Batch 6
         
         console.log('ODS v9.1 Ready');
