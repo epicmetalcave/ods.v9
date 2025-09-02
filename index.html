@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODS v9.1</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <header id="top-bar">
+        <div class="app-title">ODS v9.1</div>
+        <div class="global-actions">
+            <button id="export-btn">Export</button>
+            <input type="file" id="import-input" accept=".json" style="display:none">
+            <button id="import-btn" onclick="document.getElementById('import-input').click()">Import</button>
+            <div class="scale-controls">
+                <button id="scale-down">-</button>
+                <span id="scale-display">100%</span>
+                <button id="scale-up">+</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Container -->
+    <main id="main-container">
+        <!-- Future panels will be inserted here -->
+    </main>
+    
+    <!-- Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/backup.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
