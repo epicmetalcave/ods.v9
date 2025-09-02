@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODS v9.1 - Backup Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-section {
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid var(--color-ui);
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px dashed var(--color-ui);
+            font-size: 0.9em;
+            white-space: pre-wrap;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .history-item {
+            padding: 5px;
+            border-bottom: 1px dashed var(--color-ui);
+            margin: 5px 0;
+        }
+        .test-data-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <header id="top-bar">
+        <div class="app-title">BACKUP TEST</div>
+        <div class="global-actions">
+            <button id="export-btn">EXPORT</button>
+            <input type="file" id="import-input" accept=".json" style="display:none">
+            <button id="import-btn" onclick="document.getElementById('import-input').click()">IMPORT</button>
+        </div>
+    </header>
+    <main id="main-container" style="overflow-y: auto;">
+        
+        <!-- Current Data Status -->
+        <div class="test-section">
+            <h2>CURRENT DATA STATUS</h2>
+            <div class="test-data-section">
+                <div>
+                    <strong>Themes:</strong>
+                    <span id="themes-count">0</span>
+                </div>
+                <div>
+                    <strong>Operations:</strong>
+                    <span id="operations-count">0</span>
+                </div>
+                <div>
+                    <strong>Workspaces:</strong>
+                    <span id="workspaces-count">0</span>
+                </div>
+                <div>
+                    <strong>Backups:</strong>
+                    <span id="backups-count">0</span>
+                </div>
+            </div>
+            <button onclick="updateDataCounts()">REFRESH COUNTS</button>
+            <div id="data-status" class="status">Loading...</div>
+        </div>
+        
+        <!-- Test Data Generation -->
+        <div class="test-section">
+            <h2>GENERATE TEST DATA</h2>
+            <div class="button-group">
+                <button onclick="generateTestTheme()">ADD TEST THEME</button>
+                <button onclick="generateTestOperations()">ADD 5 OPERATIONS</button>
+                <button onclick="generateTestWorkspace()">ADD WORKSPACE</button>
+                <button onclick="clearAllData()">CLEAR ALL DATA</button>
+            </div>
+            <div id="generate-status" class="status">Ready to generate test data...</div>
+        </div>
+        
+        <!-- Export/Import Test -->
+        <div class="test-section">
+            <h2>EXPORT/IMPORT TEST</h2>
+            <div class="button-group">
+                <button onclick="testExport()">TEST EXPORT</button>
+                <button onclick="testAutoBackup()">TEST AUTO-BACKUP</button>
+                <input type="file" id="test-import-input" accept=".json" style="display:none" onchange="testImport(this)">
+                <button onclick="document.getElementById('test-import-input').click()">TEST IMPORT</button>
+            </div>
+            <div id="backup-status" class="status">Ready for backup operations...</div>
+        </div>
+        
+        <!-- Backup History -->
+        <div class="test-section">
+            <h2>BACKUP HISTORY</h2>
+            <div class="button-group">
+                <button onclick="loadBackupHistory()">LOAD HISTORY</button>
+                <button onclick="clearHistory()">CLEAR HISTORY</button>
+            </div>
+            <div id="history-list" class="status">No history loaded...</div>
+        </div>
+        
+    </main>
+    
+    <script src="js/database.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/backup.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initDB();
+                await initTheme();
+                setupBackupHandlers();
+                updateDataCounts();
+                document.getElementById('data-status').textContent = 'System initialized successfully';
+            } catch (error) {
+                document.getElementById('data-status').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Update data counts
+        async function updateDataCounts() {
+            try {
+                const themes = await getAllItems('themes');
+                const operations = await getAllItems('operations');
+                const workspaces = await getAllItems('workspaces');
+                const backups = await getAllItems('backups');
+                
+                document.getElementById('themes-count').textContent = themes.length;
+                document.getElementById('operations-count').textContent = operations.length;
+                document.getElementById('workspaces-count').textContent = workspaces.length;
+                document.getElementById('backups-count').textContent = backups.length;
+                
+                document.getElementById('data-status').textContent = 
+                    `Data updated at ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                document.getElementById('data-status').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        // Test data generation
+        async function generateTestTheme() {
+            const status = document.getElementById('generate-status');
+            try {
+                const testTheme = {
+                    id: 'test-' + Date.now(),
+                    colors: { background: '#000000', text: '#00FF00', ui: '#00FF00' },
+                    typography: { fontFamily: 'Share Tech Mono', baseFontSize: 16 },
+                    scale: { current: 1.25, min: 0.25, max: 2.0 },
+                    timestamp: Date.now()
+                };
+                await addItem('themes', testTheme);
+                status.textContent = 'Test theme added successfully';
+                updateDataCounts();
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function generateTestOperations() {
+            const status = document.getElementById('generate-status');
+            try {
+                for (let i = 0; i < 5; i++) {
+                    await addItem('operations', {
+                        type: 'tracker',
+                        data: { 
+                            name: `Test Operation ${i + 1}`,
+                            description: `Generated at ${new Date().toLocaleTimeString()}`
+                        },
+                        created: Date.now()
+                    });
+                }
+                status.textContent = '5 test operations added successfully';
+                updateDataCounts();
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function generateTestWorkspace() {
+            const status = document.getElementById('generate-status');
+            try {
+                const workspace = {
+                    name: 'Test Workspace ' + Date.now(),
+                    panels: [
+                        { type: 'operations', position: 'left' },
+                        { type: 'timeline', position: 'right' }
+                    ],
+                    created: Date.now()
+                };
+                await addItem('workspaces', workspace);
+                status.textContent = 'Test workspace added successfully';
+                updateDataCounts();
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function clearAllData() {
+            const status = document.getElementById('generate-status');
+            if (!confirm('Clear all data from all stores?')) return;
+            
+            try {
+                await clearStore('themes');
+                await clearStore('operations');
+                await clearStore('workspaces');
+                status.textContent = 'All data cleared successfully';
+                updateDataCounts();
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        // Backup operations
+        async function testExport() {
+            const status = document.getElementById('backup-status');
+            try {
+                const result = await exportData();
+                if (result.success) {
+                    status.textContent = `Export successful: ${result.filename}\nCheck your downloads folder`;
+                } else {
+                    status.textContent = `Export failed: ${result.error}`;
+                }
+                updateDataCounts();
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function testAutoBackup() {
+            const status = document.getElementById('backup-status');
+            try {
+                const result = await autoBackup();
+                if (result.success) {
+                    status.textContent = `Auto-backup successful: ${result.filename}`;
+                } else {
+                    status.textContent = `Auto-backup failed: ${result.error}`;
+                }
+                updateDataCounts();
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        async function testImport(input) {
+            const status = document.getElementById('backup-status');
+            const file = input.files[0];
+            if (!file) return;
+            
+            try {
+                const result = await importData(file);
+                if (result.success) {
+                    status.textContent = result.message;
+                    updateDataCounts();
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    status.textContent = `Import failed: ${result.error}`;
+                }
+            } catch (error) {
+                status.textContent = 'Error: ' + error.message;
+            }
+            
+            input.value = '';
+        }
+        
+        // Backup history
+        async function loadBackupHistory() {
+            const historyDiv = document.getElementById('history-list');
+            try {
+                const history = await getBackupHistory();
+                
+                if (history.length === 0) {
+                    historyDiv.textContent = 'No backup history found';
+                    return;
+                }
+                
+                let html = `Found ${history.length} backup records:\n\n`;
+                history.forEach(backup => {
+                    const date = new Date(backup.timestamp).toLocaleString();
+                    const type = backup.type || 'export';
+                    html += `[${type.toUpperCase()}] ${date}\n`;
+                    if (backup.filename) html += `File: ${backup.filename}\n`;
+                    if (backup.counts) {
+                        html += `Contents: ${backup.counts.themes} themes, `;
+                        html += `${backup.counts.operations} operations, `;
+                        html += `${backup.counts.workspaces} workspaces\n`;
+                    }
+                    html += '\n';
+                });
+                
+                historyDiv.textContent = html;
+            } catch (error) {
+                historyDiv.textContent = 'Error loading history: ' + error.message;
+            }
+        }
+        
+        async function clearHistory() {
+            if (!confirm('Clear all backup history?')) return;
+            
+            const historyDiv = document.getElementById('history-list');
+            try {
+                await clearBackupHistory();
+                historyDiv.textContent = 'Backup history cleared';
+                updateDataCounts();
+            } catch (error) {
+                historyDiv.textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        // Auto-refresh counts every 5 seconds
+        setInterval(updateDataCounts, 5000);
+    </script>
+</body>
+</html>

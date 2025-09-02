@@ -71,7 +71,9 @@ async function initApp() {
         // Set up scale controls
         setupScaleControls();
         
-        // Backup system will be initialized in Batch 6
+        // Set up backup handlers
+        setupBackupHandlers();
+        console.log('Backup handlers initialized');
         
         console.log('ODS v9.1 Ready');
         
