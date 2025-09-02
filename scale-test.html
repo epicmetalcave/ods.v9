@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODS v9.1 - Scale Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header id="top-bar">
+        <div class="app-title">SCALE TEST</div>
+        <div class="global-actions">
+            <button onclick="resetTheme()">RESET THEME</button>
+            <div class="scale-controls">
+                <button id="scale-down">-</button>
+                <span id="scale-display">100%</span>
+                <button id="scale-up">+</button>
+            </div>
+        </div>
+    </header>
+    <main id="main-container">
+        <div style="padding: 20px;">
+            <h2>SCALE TESTING</h2>
+            <p>Current Scale: <span id="current-scale">1.00</span></p>
+            <p>Scale Range: 0.25 - 2.00 (Step: 0.05)</p>
+            <br>
+            <p>KEYBOARD SHORTCUTS:</p>
+            <ul style="list-style: none; padding-left: 0;">
+                <li>Ctrl/Cmd + Plus: Scale Up</li>
+                <li>Ctrl/Cmd + Minus: Scale Down</li>
+                <li>Ctrl/Cmd + 0: Reset to 100%</li>
+            </ul>
+            <br>
+            <div style="border: 1px solid var(--color-ui); padding: 10px;">
+                TEST CONTENT BOX<br>
+                The quick brown fox jumps over the lazy dog.<br>
+                0123456789 !@#$%^&*()
+            </div>
+            <br>
+            <button onclick="testScale(0.25)">MIN (25%)</button>
+            <button onclick="testScale(0.5)">50%</button>
+            <button onclick="testScale(1)">100%</button>
+            <button onclick="testScale(1.5)">150%</button>
+            <button onclick="testScale(2)">MAX (200%)</button>
+        </div>
+    </main>
+    
+    <script src="js/theme.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        function testScale(value) {
+            setScale(value);
+            saveTheme();
+            document.getElementById('current-scale').textContent = value.toFixed(2);
+        }
+        
+        // Update current scale display
+        setInterval(() => {
+            document.getElementById('current-scale').textContent = getScale().toFixed(2);
+        }, 100);
+    </script>
+</body>
+</html>
