@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ODS v9.1 - Theme Database Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .test-section {
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid var(--color-ui);
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px dashed var(--color-ui);
+            font-size: 0.9em;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .info-label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header id="top-bar">
+        <div class="app-title">THEME DATABASE TEST</div>
+        <div class="global-actions">
+            <div class="scale-controls">
+                <button id="scale-down">-</button>
+                <span id="scale-display">100%</span>
+                <button id="scale-up">+</button>
+            </div>
+        </div>
+    </header>
+    <main id="main-container" style="overflow-y: auto;">
+        <!-- Current Theme Info -->
+        <div class="test-section">
+            <h2>CURRENT THEME STATUS</h2>
+            <div class="info-grid">
+                <div class="info-label">Current Scale:</div>
+                <div id="current-scale">Loading...</div>
+                
+                <div class="info-label">Background:</div>
+                <div id="current-bg">Loading...</div>
+                
+                <div class="info-label">Text Color:</div>
+                <div id="current-text">Loading...</div>
+                
+                <div class="info-label">UI Color:</div>
+                <div id="current-ui">Loading...</div>
+                
+                <div class="info-label">Font Family:</div>
+                <div id="current-font">Loading...</div>
+                
+                <div class="info-label">Base Font Size:</div>
+                <div id="current-font-size">Loading...</div>
+            </div>
+            <div id="theme-status" class="status">Initializing...</div>
+        </div>
+        
+        <!-- Theme Database Operations -->
+        <div class="test-section">
+            <h2>THEME DATABASE OPERATIONS</h2>
+            <div class="button-group">
+                <button onclick="loadThemeFromDB()">LOAD FROM DB</button>
+                <button onclick="saveThemeToDB()">SAVE TO DB</button>
+                <button onclick="deleteThemeFromDB()">DELETE FROM DB</button>
+                <button onclick="resetThemeTest()">RESET THEME</button>
+            </div>
+            <div class="button-group">
+                <button onclick="checkDatabaseTheme()">CHECK DB THEME</button>
+                <button onclick="checkLocalStorage()">CHECK LOCALSTORAGE</button>
+                <button onclick="clearAllStorage()">CLEAR ALL STORAGE</button>
+            </div>
+            <div id="operation-status" class="status">Ready for operations...</div>
+        </div>
+        
+        <!-- Scale Testing -->
+        <div class="test-section">
+            <h2>SCALE PERSISTENCE TEST</h2>
+            <div class="button-group">
+                <button onclick="setScaleTest(0.5)">SET 50%</button>
+                <button onclick="setScaleTest(0.75)">SET 75%</button>
+                <button onclick="setScaleTest(1)">SET 100%</button>
+                <button onclick="setScaleTest(1.25)">SET 125%</button>
+                <button onclick="setScaleTest(1.5)">SET 150%</button>
+            </div>
+            <p>After setting scale, refresh the page to test persistence.</p>
+            <button onclick="location.reload()" style="margin-top: 10px;">REFRESH PAGE</button>
+        </div>
+        
+        <!-- Migration Test -->
+        <div class="test-section">
+            <h2>LOCALSTORAGE MIGRATION TEST</h2>
+            <div class="button-group">
+                <button onclick="createLocalStorageTheme()">CREATE LOCALSTORAGE THEME</button>
+                <button onclick="testMigration()">TEST MIGRATION</button>
+            </div>
+            <div id="migration-status" class="status">Ready for migration test...</div>
+        </div>
+    </main>
+    
+    <script src="js/database.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Update display functions
+        function updateThemeDisplay() {
+            document.getElementById('current-scale').textContent = getScale().toFixed(2);
+            document.getElementById('current-bg').textContent = theme.colors.background;
+            document.getElementById('current-text').textContent = theme.colors.text;
+            document.getElementById('current-ui').textContent = theme.colors.ui;
+            document.getElementById('current-font').textContent = theme.typography.fontFamily;
+            document.getElementById('current-font-size').textContent = theme.typography.baseFontSize + 'px';
+            
+            // Update scale display
+            document.getElementById('scale-display').textContent = Math.round(getScale() * 100) + '%';
+        }
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initDB();
+                await initTheme();
+                setupScaleControls();
+                updateThemeDisplay();
+                document.getElementById('theme-status').textContent = 'Theme system initialized successfully';
+            } catch (error) {
+                document.getElementById('theme-status').textContent = 'Error: ' + error.message;
+            }
+        });
+        
+        // Test functions
+        async function loadThemeFromDB() {
+            const status = document.getElementById('operation-status');
+            try {
+                await loadTheme();
+                applyTheme(theme);
+                setScale(currentScale);
+                updateThemeDisplay();
+                status.textContent = 'Theme loaded from database successfully';
+            } catch (error) {
+                status.textContent = 'Error loading theme: ' + error.message;
+            }
+        }
+        
+        async function saveThemeToDB() {
+            const status = document.getElementById('operation-status');
+            try {
+                await saveTheme();
+                status.textContent = 'Theme saved to database successfully';
+            } catch (error) {
+                status.textContent = 'Error saving theme: ' + error.message;
+            }
+        }
+        
+        async function deleteThemeFromDB() {
+            const status = document.getElementById('operation-status');
+            try {
+                await deleteTheme();
+                status.textContent = 'Theme deleted from database';
+            } catch (error) {
+                status.textContent = 'Error deleting theme: ' + error.message;
+            }
+        }
+        
+        function resetThemeTest() {
+            const status = document.getElementById('operation-status');
+            try {
+                resetTheme();
+                updateThemeDisplay();
+                status.textContent = 'Theme reset to defaults and saved';
+            } catch (error) {
+                status.textContent = 'Error resetting theme: ' + error.message;
+            }
+        }
+        
+        async function checkDatabaseTheme() {
+            const status = document.getElementById('operation-status');
+            try {
+                const dbTheme = await getItem('themes', 'default');
+                if (dbTheme) {
+                    status.textContent = 'Database theme found: ' + JSON.stringify(dbTheme, null, 2);
+                } else {
+                    status.textContent = 'No theme found in database';
+                }
+            } catch (error) {
+                status.textContent = 'Error checking database: ' + error.message;
+            }
+        }
+        
+        function checkLocalStorage() {
+            const status = document.getElementById('operation-status');
+            const theme = localStorage.getItem('ods_theme');
+            const backup = localStorage.getItem('ods_theme_backup');
+            
+            if (theme || backup) {
+                status.textContent = `LocalStorage: ${theme ? 'Theme found' : 'No theme'}, ${backup ? 'Backup found' : 'No backup'}`;
+            } else {
+                status.textContent = 'No theme data in localStorage';
+            }
+        }
+        
+        async function clearAllStorage() {
+            const status = document.getElementById('operation-status');
+            try {
+                await deleteTheme();
+                localStorage.clear();
+                status.textContent = 'All storage cleared (database and localStorage)';
+            } catch (error) {
+                status.textContent = 'Error clearing storage: ' + error.message;
+            }
+        }
+        
+        function setScaleTest(value) {
+            setScale(value);
+            saveTheme();
+            updateThemeDisplay();
+            document.getElementById('operation-status').textContent = `Scale set to ${value} and saved`;
+        }
+        
+        function createLocalStorageTheme() {
+            const status = document.getElementById('migration-status');
+            const testTheme = {
+                id: 'localStorage-test',
+                colors: { background: '#000000', text: '#00FF00', ui: '#00FF00' },
+                typography: { fontFamily: 'Share Tech Mono', baseFontSize: 16 },
+                scale: { current: 1.25, min: 0.25, max: 2.0 },
+                timestamp: Date.now()
+            };
+            localStorage.setItem('ods_theme', JSON.stringify(testTheme));
+            status.textContent = 'Test theme created in localStorage with scale 1.25';
+        }
+        
+        async function testMigration() {
+            const status = document.getElementById('migration-status');
+            try {
+                // Clear database theme first
+                await deleteItem('themes', 'default');
+                status.textContent = 'Database cleared, loading theme (should migrate from localStorage)...';
+                
+                // Load theme - should migrate from localStorage
+                await loadTheme();
+                
+                // Check if it migrated
+                const dbTheme = await getItem('themes', 'default');
+                if (dbTheme) {
+                    status.textContent = 'Migration successful! Theme now in database with scale: ' + dbTheme.scale.current;
+                    updateThemeDisplay();
+                } else {
+                    status.textContent = 'Migration failed - no theme in database';
+                }
+            } catch (error) {
+                status.textContent = 'Migration error: ' + error.message;
+            }
+        }
+        
+        // Auto-update display
+        setInterval(updateThemeDisplay, 500);
+    </script>
+</body>
+</html>
